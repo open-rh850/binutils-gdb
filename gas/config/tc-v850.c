@@ -1671,6 +1671,21 @@ md_atof (int type, char *litp, int *sizep)
 
 /* Very gross.  */
 
+/* fix_new for md_convert_frag: give the fixup the source location of the
+   frag, the instruction it belongs to.  */
+
+static fixS *
+v850_fix_new (fragS *fragP, unsigned long where, unsigned long size,
+	      symbolS *sym, offsetT offset, int pcrel,
+	      bfd_reloc_code_real_type r_type)
+{
+  fixS *fixP = fix_new (fragP, where, size, sym, offset, pcrel, r_type);
+
+  fixP->fx_file = fragP->fr_file;
+  fixP->fx_line = fragP->fr_line;
+  return fixP;
+}
+
 void
 md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED,
 		 asection *sec ATTRIBUTE_UNUSED,
@@ -1680,8 +1695,8 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED,
 
   if (fragP->fr_subtype == SUBYPTE_LOOP_16_22)
     {
-      fix_new (fragP, fragP->fr_fix, 4, fragP->fr_symbol,
-	       fragP->fr_offset, 1, BFD_RELOC_UNUSED + opindex);
+      v850_fix_new (fragP, fragP->fr_fix, 4, fragP->fr_symbol,
+		    fragP->fr_offset, 1, BFD_RELOC_UNUSED + opindex);
       fragP->fr_fix += 4;
     }
   else if (fragP->fr_subtype == SUBYPTE_LOOP_16_22 + 1)
@@ -1694,8 +1709,8 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED,
       /* Now create the conditional branch + fixup to the final target.  */
       /* 0x000107ea = bne LBL(disp17).  */
       md_number_to_chars (buffer + 2, 0x000107ea, 4);
-      fix_new (fragP, fragP->fr_fix + 2, 4, fragP->fr_symbol,
-	       fragP->fr_offset, 1, BFD_RELOC_V850_17_PCREL);
+      v850_fix_new (fragP, fragP->fr_fix + 2, 4, fragP->fr_symbol,
+		    fragP->fr_offset, 1, BFD_RELOC_V850_17_PCREL);
       fragP->fr_fix += 6;
     }
   /* In range conditional or unconditional branch.  */
@@ -1711,8 +1726,8 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED,
       || fragP->fr_subtype == SUBYPTE_SA_9_17_22_32)
 
     {
-      fix_new (fragP, fragP->fr_fix, 2, fragP->fr_symbol,
-	       fragP->fr_offset, 1, BFD_RELOC_UNUSED + opindex);
+      v850_fix_new (fragP, fragP->fr_fix, 2, fragP->fr_symbol,
+		    fragP->fr_offset, 1, BFD_RELOC_UNUSED + opindex);
       fragP->fr_fix += 2;
     }
   /* V850e2r-v3 17bit conditional branch.  */
@@ -1730,8 +1745,8 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED,
       /* Now create the unconditional branch + fixup to the final
 	 target.  */
       md_number_to_chars (buffer + 2, 0x0001, 2);
-      fix_new (fragP, fragP->fr_fix, 4, fragP->fr_symbol,
-	       fragP->fr_offset, 1, BFD_RELOC_V850_17_PCREL);
+      v850_fix_new (fragP, fragP->fr_fix, 4, fragP->fr_symbol,
+		    fragP->fr_offset, 1, BFD_RELOC_V850_17_PCREL);
       fragP->fr_fix += 4;
     }
   /* Out of range conditional branch.  Emit a branch around a 22bit jump.  */
@@ -1754,8 +1769,8 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED,
       /* Now create the unconditional branch + fixup to the final
 	 target.  */
       md_number_to_chars (buffer + 2, 0x00000780, 4);
-      fix_new (fragP, fragP->fr_fix + 2, 4, fragP->fr_symbol,
-	       fragP->fr_offset, 1, BFD_RELOC_V850_22_PCREL);
+      v850_fix_new (fragP, fragP->fr_fix + 2, 4, fragP->fr_symbol,
+		    fragP->fr_offset, 1, BFD_RELOC_V850_22_PCREL);
       fragP->fr_fix += 6;
     }
   /* Out of range conditional branch.  Emit a branch around a 32bit jump.  */
@@ -1776,8 +1791,8 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED,
       /* Now create the unconditional branch + fixup to the final
 	 target.  */
       md_number_to_chars (buffer + 2, 0x02e0, 2);
-      fix_new (fragP, fragP->fr_fix + 4, 4, fragP->fr_symbol,
-	       fragP->fr_offset + 2, 1, BFD_RELOC_V850_32_PCREL);
+      v850_fix_new (fragP, fragP->fr_fix + 4, 4, fragP->fr_symbol,
+		    fragP->fr_offset + 2, 1, BFD_RELOC_V850_32_PCREL);
       fragP->fr_fix += 8;
     }
   /* Out of range unconditional branch.  Emit a 22bit jump.  */
@@ -1785,16 +1800,16 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED,
 	   || fragP->fr_subtype == SUBYPTE_UNCOND_9_22_32 + 1)
     {
       md_number_to_chars (fragP->fr_fix + fragP->fr_literal, 0x00000780, 4);
-      fix_new (fragP, fragP->fr_fix, 4, fragP->fr_symbol,
-	       fragP->fr_offset, 1, BFD_RELOC_V850_22_PCREL);
+      v850_fix_new (fragP, fragP->fr_fix, 4, fragP->fr_symbol,
+		    fragP->fr_offset, 1, BFD_RELOC_V850_22_PCREL);
       fragP->fr_fix += 4;
     }
   /* Out of range unconditional branch.  Emit a 32bit jump.  */
   else if (fragP->fr_subtype == SUBYPTE_UNCOND_9_22_32 + 2)
     {
       md_number_to_chars (fragP->fr_fix + fragP->fr_literal, 0x02e0, 2);
-      fix_new (fragP, fragP->fr_fix + 4, 4, fragP->fr_symbol,
-	       fragP->fr_offset + 2, 1, BFD_RELOC_V850_32_PCREL);
+      v850_fix_new (fragP, fragP->fr_fix + 4, 4, fragP->fr_symbol,
+		    fragP->fr_offset + 2, 1, BFD_RELOC_V850_32_PCREL);
       fragP->fr_fix += 6;
     }
   /* Out of range SA conditional branch.  Emit a branch to a 22bit jump.  */
@@ -1817,8 +1832,8 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED,
 	 target.  */
       /* jr SYM */
       md_number_to_chars (buffer + 4, 0x00000780, 4);
-      fix_new (fragP, fragP->fr_fix + 4, 4, fragP->fr_symbol,
-	       fragP->fr_offset, 1, BFD_RELOC_V850_22_PCREL);
+      v850_fix_new (fragP, fragP->fr_fix + 4, 4, fragP->fr_symbol,
+		    fragP->fr_offset, 1, BFD_RELOC_V850_22_PCREL);
       fragP->fr_fix += 8;
     }
   /* Out of range SA conditional branch.  Emit a branch around a 32bit jump.  */
@@ -1839,8 +1854,8 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED,
 	 target.  */
       /* jr SYM */
       md_number_to_chars (buffer + 4, 0x02e0, 2);
-      fix_new (fragP, fragP->fr_fix + 6, 4, fragP->fr_symbol,
-	       fragP->fr_offset + 2, 1, BFD_RELOC_V850_32_PCREL);
+      v850_fix_new (fragP, fragP->fr_fix + 6, 4, fragP->fr_symbol,
+		    fragP->fr_offset + 2, 1, BFD_RELOC_V850_32_PCREL);
 
       fragP->fr_fix += 10;
     }
@@ -3382,6 +3397,19 @@ v850_pcrel_from_section (fixS *fixp, segT section)
   return fixp->fx_frag->fr_address + fixp->fx_where;
 }
 
+/* Report a resolved PC-relative displacement that does not fit in a
+   signed field of BITS bits.  */
+
+static void
+v850_check_pcrel_range (fixS *fixP, valueT value, int bits)
+{
+  valueT half = (valueT) 1 << (bits - 1);
+
+  if (value + half > 2 * half - 1)
+    as_bad_where (fixP->fx_file, fixP->fx_line,
+		  _("branch value out of range"));
+}
+
 void
 md_apply_fix (fixS *fixP, valueT *valueP, segT seg ATTRIBUTE_UNUSED)
 {
@@ -3445,10 +3473,22 @@ md_apply_fix (fixS *fixP, valueT *valueP, segT seg ATTRIBUTE_UNUSED)
       if (operand->flags & V850_INVERSE_PCREL)
 	value = - value;
 
-      insn = v850_insert_operand (insn, operand, (offsetT) value,
-				  &errmsg);
-      if (errmsg)
-	as_warn_where (fixP->fx_file, fixP->fx_line, "%s", errmsg);
+      if (fixP->fx_done && (operand->flags & V850_PCREL) != 0
+	  && operand->insert != NULL)
+	{
+	  /* A resolved branch displacement must fit, whatever
+	     -mwarn-signed-overflow says.  */
+	  insn = operand->insert (insn, (offsetT) value, &errmsg);
+	  if (errmsg)
+	    as_bad_where (fixP->fx_file, fixP->fx_line, "%s", errmsg);
+	}
+      else
+	{
+	  insn = v850_insert_operand (insn, operand, (offsetT) value,
+				      &errmsg);
+	  if (errmsg)
+	    as_warn_where (fixP->fx_file, fixP->fx_line, "%s", errmsg);
+	}
 
       if (fixP->fx_size > 2)
 	bfd_putl32 (insn, where);
@@ -3546,11 +3586,13 @@ md_apply_fix (fixS *fixP, valueT *valueP, segT seg ATTRIBUTE_UNUSED)
 	      break;
 
 	    case BFD_RELOC_V850_9_PCREL:
+	      v850_check_pcrel_range (fixP, value, 9);
 	      bfd_putl16 (((value & 0x1f0) << 7) | ((value & 0x0e) << 3)
 			  | (bfd_getl16 (where) & ~((0x1f0 << 7) | (0x0e << 3))), where);
 	      break;
 
 	    case BFD_RELOC_V850_17_PCREL:
+	      v850_check_pcrel_range (fixP, value, 17);
 	      bfd_putl32 (((value & 0x10000) >> (16 - 4)) | ((value & 0xfffe) << 16)
 			  | (bfd_getl32 (where) & ~((0x10000 >> (16 - 4)) | (0xfffe << 16))), where);
 	      break;
@@ -3561,6 +3603,7 @@ md_apply_fix (fixS *fixP, valueT *valueP, segT seg ATTRIBUTE_UNUSED)
 	      break;
 
 	    case BFD_RELOC_V850_22_PCREL:
+	      v850_check_pcrel_range (fixP, value, 22);
 	      bfd_putl32 (((value & 0xfffe) << 16) | ((value & 0x3f0000) >> 16)
 			  | (bfd_getl32 (where) & ~((0xfffe << 16) | (0x3f0000 >> 16))), where);
 	      break;
