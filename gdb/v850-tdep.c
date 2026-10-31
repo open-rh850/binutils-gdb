@@ -1315,7 +1315,8 @@ v850_frame_this_id (const frame_info_ptr &this_frame, void **this_cache,
   if (cache->base == 0)
     return;
 
-  *this_id = frame_id_build (cache->saved_regs[E_SP_REGNUM].addr (), cache->pc);
+  *this_id = frame_id_build (cache->saved_regs[E_SP_REGNUM].value (),
+			     cache->pc);
 }
 
 static const struct frame_unwind_legacy v850_frame_unwind (
