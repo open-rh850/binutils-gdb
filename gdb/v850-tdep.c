@@ -1242,15 +1242,6 @@ v850_frame_cache (const frame_info_ptr &this_frame, void **this_cache)
   cache = v850_alloc_frame_cache (this_frame);
   *this_cache = cache;
 
-  /* In principle, for normal frames, fp holds the frame pointer,
-     which holds the base address for the current stack frame.
-     However, for functions that don't need it, the frame pointer is
-     optional.  For these "frameless" functions the frame pointer is
-     actually the frame pointer of the calling frame.  */
-  cache->base = get_frame_register_unsigned (this_frame, E_FP_REGNUM);
-  if (cache->base == 0)
-    return cache;
-
   cache->pc = get_frame_func (this_frame);
   current_pc = get_frame_pc (this_frame);
   if (cache->pc != 0)
@@ -1260,15 +1251,22 @@ v850_frame_cache (const frame_info_ptr &this_frame, void **this_cache)
       v850_analyze_prologue (gdbarch, cache->pc, current_pc, cache, ctbp);
     }
 
-  if (!cache->uses_fp)
+  if (cache->uses_fp)
     {
-      /* We didn't find a valid frame, which means that CACHE->base
-	 currently holds the frame pointer for our calling frame.  If
-	 we're at the start of a function, or somewhere half-way its
-	 prologue, the function's frame probably hasn't been fully
-	 setup yet.  Try to reconstruct the base address for the stack
-	 frame by looking at the stack pointer.  For truly "frameless"
-	 functions this might work too.  */
+      /* The prologue set up fp, which holds the base address of the
+	 stack frame.  An fp of zero marks the outermost frame.  */
+      cache->base = get_frame_register_unsigned (this_frame, E_FP_REGNUM);
+      if (cache->base == 0)
+	return cache;
+    }
+  else
+    {
+      /* Without a frame pointer, fp (r29) is an ordinary register
+	 and may hold any value, zero included.  If we're at the start
+	 of a function, or somewhere half-way its prologue, the
+	 function's frame probably hasn't been fully setup yet either.
+	 Reconstruct the base address for the stack frame by looking at
+	 the stack pointer.  */
       cache->base = get_frame_register_unsigned (this_frame, E_SP_REGNUM);
     }
 
