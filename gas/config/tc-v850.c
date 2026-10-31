@@ -129,7 +129,8 @@ const relax_typeS md_relax_table[] =
   /* Loop.  (V850E2V4_UP, max 22-bit).  */
 #define SUBYPTE_LOOP_16_22	29
   {0x0, -0x0fffe, 4, SUBYPTE_LOOP_16_22 + 1},
-  {0x1ffffe + 2, -0x200000 + 2, 6, 0},
+  {0xfffe + 2, -0x10000 + 2, 6, SUBYPTE_LOOP_16_22 + 2},
+  {0x1ffffe + 4, -0x200000 + 4, 8, 0},
 };
 
 static int v850_relax = 0;
@@ -1713,6 +1714,21 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED,
 		    fragP->fr_offset, 1, BFD_RELOC_V850_17_PCREL);
       fragP->fr_fix += 6;
     }
+  else if (fragP->fr_subtype == SUBYPTE_LOOP_16_22 + 2)
+    {
+      char *buffer = fragP->fr_literal + fragP->fr_fix;
+      int loop_reg = buffer[0] & 0x1f;
+
+      /* Add -1.reg.  */
+      md_number_to_chars (buffer, 0x025f | (loop_reg << 11), 2);
+      /* Now branch around a 22bit jump to the final target.  */
+      /* 0x05b2 = be .+6.  */
+      md_number_to_chars (buffer + 2, 0x05b2, 2);
+      md_number_to_chars (buffer + 4, 0x00000780, 4);
+      v850_fix_new (fragP, fragP->fr_fix + 4, 4, fragP->fr_symbol,
+		    fragP->fr_offset, 1, BFD_RELOC_V850_22_PCREL);
+      fragP->fr_fix += 8;
+    }
   /* In range conditional or unconditional branch.  */
   else if (fragP->fr_subtype == SUBYPTE_COND_9_22
       || fragP->fr_subtype == SUBYPTE_UNCOND_9_22
@@ -3060,7 +3076,7 @@ md_assemble (char *str)
 	  if (((processor_mask & PROCESSOR_V850E3V5_UP) == 0) || default_disp_size == 22)
 	    {
 	      insn_size = 4;
-	      f = frag_var (rs_machine_dependent, 6, 2, SUBYPTE_LOOP_16_22,
+	      f = frag_var (rs_machine_dependent, 8, 4, SUBYPTE_LOOP_16_22,
 			    fixups[0].exp.X_add_symbol,
 			    fixups[0].exp.X_add_number,
 			    (char *) (uintptr_t) fixups[0].opindex);
