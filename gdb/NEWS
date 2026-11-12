@@ -40,6 +40,16 @@
   source is modified.  Source tracking can be enabled with 'set
   breakpoint source-tracking enabled on'.
 
+* On v850e3v5 targets, "set disassembler-options g4" and "set
+  disassembler-options g4mh2" select the RH850 G4 and G4MH2 names of
+  the system registers, both in the disassembly and for the registers
+  shown by "info registers".
+
+* GDB now uses the target description on v850e3v5 targets that
+  provide the org.gnu.gdb.v850.core feature, so registers outside the
+  fixed register layout, such as the RH850 system registers with a
+  selection ID of 8 or more, can be shown.
+
 * New targets
 
 i386 Windows/MSVC               i[34567]86-*-windows-msvc
