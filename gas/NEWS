@@ -1,5 +1,8 @@
 -*- text -*-
 
+* Add support for the RH850 FXU vector instructions to the v850 assembler,
+  enabled with -mfxu.
+
 * Add support for the RH850 G4MH2 instructions to the v850 assembler,
   enabled with -mg4mh2.
 
