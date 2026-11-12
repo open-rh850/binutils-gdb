@@ -1,5 +1,8 @@
 -*- text -*-
 
+* Add support for the RH850 G4MH2 instructions to the v850 assembler,
+  enabled with -mg4mh2.
+
 * Add support for the RH850 G4 (G4KH, G4MH) instructions to the v850
   assembler, enabled with -mg4.
 

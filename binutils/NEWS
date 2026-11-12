@@ -1,7 +1,7 @@
 -*- text -*-
 
-* The v850 disassembler option -M g4 prints the system registers with their
-  RH850 G4 names.
+* The v850 disassembler options -M g4 and -M g4mh2 print the system registers
+  with their RH850 G4 and G4MH2 names.
 
 * RISC-V disassembly now supports the -M arch=ISA option, which names the ISA
   to disassemble for in place of the one the object records.  It is useful for
